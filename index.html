@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>יומן אירועי בטיחות</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="wrap top-inner"><a class="brand" href="/">יומן אירועי בטיחות</a><nav aria-label="ניווט"><button type="button" data-screen="dashboard" aria-current="page">לוח מחוונים</button><button type="button" data-screen="entry">דיווח חדש</button></nav></div></header>
+<main class="wrap">
+<p id="notice" role="status" hidden></p>
+<section id="dashboard">
+  <div class="heading"><div><h1>לוח מחוונים</h1><p>תאונות עבודה, כמעט־תאונות ואירועי בטיחות</p></div><button data-screen="entry" class="primary" type="button">+ דיווח חדש</button></div>
+  <div class="panel filters">
+    <label>מחלקה<select id="department-filter"></select></label>
+    <label>סוג אירוע<select id="type-filter"></select></label>
+    <label>איבר שנפגע<select id="body-filter"></select></label>
+    <button id="clear-filters" type="button">נקה סינון</button>
+  </div>
+  <div class="metrics" aria-live="polite">
+    <article class="panel"><span>אירועים</span><strong id="events-count">0</strong></article>
+    <article class="panel"><span>נפגעים</span><strong id="people-count">0</strong></article>
+    <article class="panel"><span>ימי היעדרות מתועדים</span><strong id="days-count">—</strong><small id="days-note"></small></article>
+    <article class="panel"><span>אירועים ללא נפגע מאומתים</span><strong id="no-injury-count">0</strong></article>
+  </div>
+  <div class="charts">
+    <article class="panel"><h2>אירועים לפי מחלקה</h2><div id="department-chart"></div></article>
+    <article class="panel"><h2>אירועים לפי סוג</h2><div id="type-chart"></div></article>
+    <article class="panel"><h2>נפגעים לפי איבר</h2><div id="body-chart"></div></article>
+  </div>
+  <article class="panel register">
+    <div class="section-heading"><h2>טבלת אירועים</h2><div class="actions"><button id="choose-import" type="button">ייבוא אקסל</button><a class="button" href="/api/export">ייצוא כל הרשומות</a></div></div>
+    <input id="workbook" type="file" accept=".xlsx" hidden>
+    <div id="import-review" class="review" hidden><p id="import-message"></p><button id="confirm-import" class="primary" type="button">אשר ייבוא</button><button id="cancel-import" type="button">ביטול</button></div>
+    <p id="empty">אין אירועים להצגה.</p>
+    <div class="table-wrap"><table id="record-table" hidden><thead><tr><th>מס׳ אירוע</th><th>תאריך ושעה</th><th>מחלקה</th><th>סוג האירוע</th><th>מהות האירוע</th><th>איבר שנפגע</th><th>נפגעים</th><th>פעולה</th></tr></thead><tbody id="record-rows"></tbody></table></div>
+  </article>
+</section>
+<section id="entry" hidden>
+  <div class="heading"><div><h1 id="entry-title">דיווח חדש</h1><p>הפק טיוטה מהדיווח ובדוק את הפרטים לפני השמירה</p></div></div>
+  <article id="source-panel" class="panel source">
+    <h2>מקור הדיווח</h2>
+    <label for="report-text">טקסט הדיווח</label>
+    <textarea id="report-text" rows="5" maxlength="24000" placeholder="הדבק כאן את נוסח הדיווח"></textarea>
+    <label class="scan" for="scan">או העלה מסמך סרוק בכתב יד
+      <small>PDF עד 8 עמודים, או תמונת PNG / JPG. עד 24MB.</small>
+      <input id="scan" type="file" accept="application/pdf,image/png,image/jpeg">
+    </label>
+    <div class="actions">
+      <button id="extract" class="primary" type="button">הפק טיוטה</button>
+      <button id="manual" type="button">פתח טיוטה ידנית</button>
+      <a id="scan-preview" target="_blank" rel="noopener noreferrer" hidden>פתח את הסריקה להשוואה</a>
+    </div>
+    <p id="extract-status" role="status" hidden></p>
+    <label id="transcript-panel" hidden>תמלול לבדיקה<textarea id="transcript" rows="5" maxlength="24000"></textarea><button id="re-extract" type="button">חלץ שוב מהטקסט הערוך</button></label>
+  </article>
+  <form id="draft-form" class="panel draft" hidden>
+    <div class="section-heading"><h2 id="draft-title" tabindex="-1">טיוטת האירוע</h2></div>
+    <p id="draft-help">אפשר להשאיר ערכים לא ידועים ריקים. בדוק את שמות הנפגעים, התאריך והפרטים שסומנו להשלמה.</p>
+    <div id="event-fields" class="field-grid"></div>
+    <div class="section-heading people-heading"><h2>נפגעים</h2><button id="add-person" type="button">+ הוסף נפגע</button></div>
+    <label class="check"><input type="checkbox" id="no-injury"> אומת שלא היו נפגעים</label>
+    <div id="people"></div>
+    <div class="actions foot-actions"><button id="save" class="primary" type="submit">שמור אירוע</button><button data-screen="dashboard" type="button">חזור ללוח המחוונים</button></div>
+  </form>
+</section>
+</main>
+</body>
+</html>
