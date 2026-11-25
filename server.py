@@ -11,6 +11,7 @@ from contextlib import closing
 from datetime import date, datetime, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 from urllib.error import URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
@@ -20,6 +21,7 @@ DATA = Path(os.environ.get("SAFETY_DATA_DIR", Path(os.getenv("LOCALAPPDATA", Pat
 DB = DATA / "incidents.sqlite3"
 MODEL = "gemma4:e4b"
 MAX_FILE = 24 * 1024 * 1024
+PDF_LOCK = Lock()
 EVENT = {
     "number": "מספר אירוע", "date": "תאריך האירוע", "time": "שעת האירוע",
     "location": "מיקום האירוע", "type": "סוג האירוע", "description": "מהות האירוע",
@@ -166,22 +168,31 @@ def file_data(raw):
 
 def ocr_images(data):
     if data.startswith(b"%PDF-"):
-        import pymupdf
+        import pypdfium2 as pdfium
+
         try:
-            with pymupdf.open(stream=data, filetype="pdf") as doc:
-                if doc.needs_pass:
-                    raise InputError("יש להסיר את סיסמת ה-PDF לפני הטעינה")
+            with PDF_LOCK, pdfium.PdfDocument(data) as doc:
                 if not 1 <= len(doc) <= 8:
                     raise InputError("הסריקה חייבת לכלול עד שמונה עמודים")
                 images = []
                 for page in doc:
-                    scale = min(2.5, 2200 / max(page.rect.width, page.rect.height))
-                    images.append(page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False).tobytes("png"))
+                    try:
+                        scale = min(2.5, 2200 / max(page.get_size()))
+                        bitmap = page.render(scale=scale)
+                        try:
+                            output = io.BytesIO()
+                            with bitmap.to_pil() as image:
+                                image.save(output, format="PNG")
+                            images.append(output.getvalue())
+                        finally:
+                            bitmap.close()
+                    finally:
+                        page.close()
                 return images
-        except (RuntimeError, ValueError) as exc:
+        except (pdfium.PdfiumError, ValueError, ZeroDivisionError) as exc:
             if isinstance(exc, InputError):
                 raise
-            raise InputError("לא ניתן לפתוח את ה-PDF") from exc
+            raise InputError("לא ניתן לפתוח את ה-PDF. בקובץ מוגן יש להסיר את הסיסמה.") from exc
     if data.startswith((b"\x89PNG\r\n\x1a\n", b"\xff\xd8\xff")):
         return [data]
     raise InputError("יש לבחור קובץ PDF, PNG או JPG")
