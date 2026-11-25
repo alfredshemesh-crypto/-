@@ -376,4 +376,8 @@ $("confirm-import").onclick = async () => {
   }
 };
 
-loadRecords().catch(error => status("notice", error.message, true));
+if (window.location.hostname.endsWith(".github.io")) {
+  window.location.replace(new URL("./docs/", window.location.href));
+} else {
+  loadRecords().catch(error => status("notice", error.message, true));
+}
